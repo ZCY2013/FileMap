@@ -1,0 +1,26 @@
+# CLI Framework
+click>=8.1.0
+rich>=13.0.0
+
+# Data Processing
+pyyaml>=6.0
+
+# Graph Analysis
+networkx>=3.0
+
+# File Type Detection
+python-magic-bin>=0.4.14; platform_system == "Windows"
+python-magic>=0.4.27; platform_system != "Windows"
+
+# File System Monitoring
+watchdog>=3.0.0
+
+# Optional: Data Analysis
+pandas>=2.0.0
+
+# Development Dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
