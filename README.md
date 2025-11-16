@@ -117,6 +117,33 @@ filemap stats timeline --period month
 filemap stats report --format markdown --output report.md
 ```
 
+### 6. 交互式Shell
+
+```bash
+# 启动交互式Shell
+filemap shell
+# 或
+filemap interactive
+
+# 在Shell中使用简化命令
+filemap> list                    # 列出文件
+filemap> search paper            # 搜索文件
+filemap> select 1                # 选择第1个文件
+filemap> tag add Python          # 为选中文件添加标签
+filemap> graph tree              # 树状展示知识图谱
+filemap> graph recommend         # 推荐标签
+filemap> tutorial                # 查看快速入门
+filemap> quit                    # 退出
+```
+
+**交互式Shell特性：**
+- 命令自动补全（Tab键）
+- 命令历史（上下键）
+- 快捷别名（ls=list, s=search, t=tag, g=graph, q=quit）
+- 上下文感知（选中文件后可以直接操作）
+- 树状知识图谱展示
+- 实时标签推荐
+
 ## 命令参考
 
 ### 文件管理
@@ -327,12 +354,12 @@ visualization:
 - [x] 搜索和过滤
 - [x] 知识图谱生成
 - [x] 统计和报告
+- [x] 交互式 Shell（命令补全、历史记录、树状图谱展示）
 
 ### 计划中 🚧
 - [ ] 文件系统监控（watchdog）
 - [ ] 全文搜索
 - [ ] 图形化可视化（Graphviz）
-- [ ] 交互式 shell
 - [ ] Web 界面
 - [ ] 插件系统
 

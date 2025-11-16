@@ -78,5 +78,19 @@ cli.add_command(graph_commands.graph_group)
 cli.add_command(stats_commands.stats_group)
 
 
+@cli.command()
+def shell():
+    """启动交互式Shell"""
+    from filemap.cli.interactive import run_interactive_shell
+    run_interactive_shell()
+
+
+@cli.command()
+def interactive():
+    """启动交互式Shell（别名）"""
+    from filemap.cli.interactive import run_interactive_shell
+    run_interactive_shell()
+
+
 if __name__ == "__main__":
     cli()
