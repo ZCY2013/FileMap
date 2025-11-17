@@ -10,7 +10,7 @@ from rich.text import Text
 from rich.tree import Tree
 
 from filemap.utils.config import get_config
-from filemap.storage.datastore import DataStore
+from filemap.storage.sqlite_datastore import SQLiteDataStore
 from filemap.core.models import File, Tag, Category
 from filemap.graph.knowledge_graph import KnowledgeGraph
 from filemap.search.indexer import ContentIndexer
@@ -37,7 +37,8 @@ class FileMapShell(cmd.Cmd):
         super().__init__()
         # 初始化配置和数据存储
         self.config = get_config()
-        self.datastore = DataStore(self.config.get_data_dir())
+        db_path = self.config.get_data_dir() / "filemap.db"
+        self.datastore = SQLiteDataStore(db_path)
         self.knowledge_graph = KnowledgeGraph(self.datastore)
 
         # 初始化索引器

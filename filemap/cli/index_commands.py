@@ -206,6 +206,36 @@ def optimize_index(ctx: Context):
     console.print("[green]✓ 索引优化完成[/green]")
 
 
+@index_group.command(name="update")
+@click.option("--force", is_flag=True, help="强制重新索引所有文件")
+@pass_context
+def update_index(ctx: Context, force: bool):
+    """智能增量更新索引"""
+    index_dir = ctx.config.get_data_dir() / "index"
+
+    if not index_dir.exists():
+        console.print("[yellow]索引尚未创建，请先运行 'filemap index content --all'[/yellow]")
+        return
+
+    indexer = ContentIndexer(index_dir)
+    files = list(ctx.datastore.files.values())
+
+    console.print(f"[cyan]正在{'重新' if force else '增量'}索引文件...[/cyan]")
+
+    with Progress() as progress:
+        task = progress.add_task("[green]索引中...", total=len(files))
+
+        def update_progress(current, total, filename):
+            progress.update(task, completed=current, description=f"[green]索引: {filename[:30]}")
+
+        stats = indexer.update_index(files, force=force, progress_callback=update_progress)
+
+    console.print(f"[green]✓ 索引更新完成[/green]")
+    console.print(f"  成功: {stats['success']}")
+    console.print(f"  失败: {stats['failed']}")
+    console.print(f"  跳过: {stats['skipped']}")
+
+
 def _format_size(size: int) -> str:
     """格式化文件大小"""
     for unit in ["B", "KB", "MB", "GB"]:

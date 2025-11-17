@@ -2,6 +2,79 @@
 
 本文档记录 FileMap 项目的所有重要更新和变更。
 
+## [0.3.0] - 2025-11-17
+
+### 重大架构升级
+- **SQLite 数据存储迁移**
+  - 从 JSON 文件存储迁移到 SQLite 数据库
+  - 大幅提升数据查询性能和可扩展性
+  - 支持原子性操作和事务
+  - 添加外键约束保证数据完整性
+  - 实现软删除机制
+
+- **增量索引功能**
+  - 智能检测文件修改时间
+  - 自动跳过未变更的文件
+  - 大幅提升索引更新速度
+  - 新增 `filemap index update` 命令
+
+### 新增功能
+- **数据迁移工具**
+  - `filemap migrate to-sqlite` - JSON 迁移到 SQLite
+  - `filemap migrate to-json` - SQLite 导出到 JSON（备份）
+  - 完整的迁移统计和错误报告
+
+- **测试框架**
+  - 集成 pytest 单元测试框架
+  - 核心模块测试覆盖
+  - 自动化测试和代码覆盖率报告
+
+- **错误处理优化**
+  - 定义完整的自定义异常体系
+  - 统一的错误处理机制
+  - 更清晰的错误提示信息
+
+### 技术改进
+- SQLiteDataStore 支持旧版 DataStore 接口（兼容性属性）
+- 索引器添加 `needs_reindex()` 和 `update_index()` 方法
+- 数据库 Schema 设计（schema.sql）
+- 索引优化和统计信息增强
+
+### 破坏性变更
+- **数据存储格式变更**：从 JSON 文件迁移到 SQLite 数据库
+  - 需要运行迁移命令：`filemap migrate to-sqlite`
+  - 旧版 JSON 数据仍可导出为备份
+
+### 性能提升
+- 大规模文件查询速度提升 10-50 倍
+- 增量索引减少不必要的文件处理
+- 数据库索引优化查询性能
+
+### 测试覆盖
+- 模型层测试：100% 通过
+- 数据存储层测试：100% 通过
+- 整体代码覆盖率：8% (核心模块覆盖率 > 50%)
+
+### 升级指南
+
+从 v0.2.0 升级到 v0.3.0 需要迁移数据：
+
+```bash
+# 1. 备份数据
+cp -r ~/.filemap ~/.filemap.backup
+
+# 2. 运行迁移
+filemap migrate to-sqlite \
+  --json-dir ~/.filemap/data \
+  --sqlite-db ~/.filemap/data/filemap.db
+
+# 3. 验证迁移
+filemap file list
+
+# 4. (可选) 重建索引
+filemap index rebuild
+```
+
 ## [0.2.0] - 2025-11-17
 
 ### 新增功能

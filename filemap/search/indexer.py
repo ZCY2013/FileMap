@@ -248,3 +248,85 @@ class ContentIndexer:
             logger.info("Index cleared")
         except Exception as e:
             logger.error(f"Error clearing index: {e}")
+
+    def get_indexed_time(self, file_id: str) -> Optional[datetime]:
+        """获取文件的索引时间"""
+        with self.ix.searcher() as searcher:
+            parser = QueryParser("file_id", schema=self.schema)
+            query = parser.parse(file_id)
+            results = searcher.search(query, limit=1)
+
+            if len(results) > 0:
+                indexed_at = results[0].get('indexed_at')
+                if indexed_at:
+                    return indexed_at
+            return None
+
+    def needs_reindex(self, file: File) -> bool:
+        """
+        检查文件是否需要重新索引
+
+        Args:
+            file: 文件对象
+
+        Returns:
+            True 表示需要重新索引，False 表示不需要
+        """
+        # 检查文件是否已索引
+        if not self.is_indexed(file.file_id):
+            return True
+
+        # 获取索引时间
+        indexed_time = self.get_indexed_time(file.file_id)
+        if not indexed_time:
+            return True
+
+        # 检查文件修改时间
+        file_path = Path(file.path)
+        if not file_path.exists():
+            # 文件不存在，应该从索引中删除
+            self.remove_file(file.file_id)
+            return False
+
+        file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
+
+        # 如果文件修改时间晚于索引时间，需要重新索引
+        return file_mtime > indexed_time
+
+    def update_index(self, files: List[File], force: bool = False, progress_callback=None) -> Dict[str, int]:
+        """
+        智能增量更新索引
+
+        Args:
+            files: 文件列表
+            force: 是否强制重新索引所有文件
+            progress_callback: 进度回调函数
+
+        Returns:
+            统计信息 {'success': int, 'failed': int, 'skipped': int}
+        """
+        stats = {'success': 0, 'failed': 0, 'skipped': 0}
+
+        for idx, file in enumerate(files):
+            if progress_callback:
+                progress_callback(idx + 1, len(files), file.name)
+
+            # 检查是否支持该文件类型
+            if not ExtractorFactory.get_extractor(file.path):
+                stats['skipped'] += 1
+                logger.debug(f"Skipped unsupported file: {file.name}")
+                continue
+
+            # 检查是否需要重新索引
+            if not force and not self.needs_reindex(file):
+                stats['skipped'] += 1
+                logger.debug(f"Skipped unchanged file: {file.name}")
+                continue
+
+            # 索引文件
+            if self.index_file(file):
+                stats['success'] += 1
+            else:
+                stats['failed'] += 1
+
+        return stats

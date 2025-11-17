@@ -1,9 +1,10 @@
 """主CLI入口"""
 import click
 from pathlib import Path
+import os
 
 from filemap.utils.config import get_config, init_config
-from filemap.storage.datastore import DataStore
+from filemap.storage.sqlite_datastore import SQLiteDataStore
 
 
 # 全局上下文
@@ -19,15 +20,16 @@ pass_context = click.make_pass_decorator(Context, ensure=True)
 
 
 @click.group()
-@click.version_option(version="0.1.0")
+@click.version_option(version="0.3.0")
 @pass_context
 def cli(ctx: Context):
     """FileMap - 智能文件管理和知识图谱工具"""
     # 初始化配置
     ctx.config = get_config()
-    # 初始化数据存储
+    # 初始化数据存储（使用 SQLite）
     data_dir = ctx.config.get_data_dir()
-    ctx.datastore = DataStore(data_dir)
+    db_path = Path(data_dir) / "filemap.db"
+    ctx.datastore = SQLiteDataStore(db_path)
 
 
 @cli.command()
@@ -58,17 +60,21 @@ def init(ctx: Context, path: str):
     config.set("storage.backup_dir", str(workspace_path / "backups"))
 
     # 初始化数据存储（会创建默认类别）
-    datastore = DataStore(workspace_path / "data")
+    db_path = workspace_path / "data" / "filemap.db"
+    datastore = SQLiteDataStore(db_path)
 
     click.echo(f"✓ FileMap工作空间已初始化: {workspace_path}")
-    click.echo(f"  - 数据目录: {workspace_path / 'data'}")
+    click.echo(f"  - 数据库: {db_path}")
     click.echo(f"  - 管理目录: {workspace_path / 'managed'}")
     click.echo(f"  - 备份目录: {workspace_path / 'backups'}")
     click.echo(f"  - 配置文件: {config_path}")
 
 
 # 导入子命令组
-from filemap.cli import file_commands, tag_commands, category_commands, search_commands, graph_commands, stats_commands, index_commands
+from filemap.cli import (
+    file_commands, tag_commands, category_commands, search_commands,
+    graph_commands, stats_commands, index_commands, migrate_commands
+)
 
 cli.add_command(file_commands.file_group)
 cli.add_command(tag_commands.tag_group)
@@ -77,6 +83,7 @@ cli.add_command(search_commands.search_group)
 cli.add_command(graph_commands.graph_group)
 cli.add_command(stats_commands.stats_group)
 cli.add_command(index_commands.index_group)
+cli.add_command(migrate_commands.migrate_group)
 
 
 @cli.command()

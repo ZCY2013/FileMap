@@ -5,13 +5,13 @@ from collections import Counter, defaultdict
 import json
 
 from filemap.core.models import File, Tag
-from filemap.storage.datastore import DataStore
+from filemap.storage.sqlite_datastore import SQLiteDataStore
 
 
 class KnowledgeGraph:
     """知识图谱类"""
 
-    def __init__(self, datastore: DataStore):
+    def __init__(self, datastore: SQLiteDataStore):
         """
         初始化知识图谱
 
