@@ -68,7 +68,7 @@ def init(ctx: Context, path: str):
 
 
 # 导入子命令组
-from filemap.cli import file_commands, tag_commands, category_commands, search_commands, graph_commands, stats_commands
+from filemap.cli import file_commands, tag_commands, category_commands, search_commands, graph_commands, stats_commands, index_commands
 
 cli.add_command(file_commands.file_group)
 cli.add_command(tag_commands.tag_group)
@@ -76,6 +76,7 @@ cli.add_command(category_commands.category_group)
 cli.add_command(search_commands.search_group)
 cli.add_command(graph_commands.graph_group)
 cli.add_command(stats_commands.stats_group)
+cli.add_command(index_commands.index_group)
 
 
 @cli.command()

@@ -13,6 +13,7 @@ from filemap.utils.config import get_config
 from filemap.storage.datastore import DataStore
 from filemap.core.models import File, Tag, Category
 from filemap.graph.knowledge_graph import KnowledgeGraph
+from filemap.search.indexer import ContentIndexer
 
 
 console = Console()
@@ -39,6 +40,10 @@ class FileMapShell(cmd.Cmd):
         self.datastore = DataStore(self.config.get_data_dir())
         self.knowledge_graph = KnowledgeGraph(self.datastore)
 
+        # 初始化索引器
+        index_dir = self.config.get_data_dir() / "index"
+        self.indexer = ContentIndexer(index_dir)
+
         # 上下文状态
         self.current_files: List[File] = []  # 当前查询结果
         self.selected_file: Optional[File] = None  # 选中的文件
@@ -54,6 +59,7 @@ class FileMapShell(cmd.Cmd):
             "t": "tag",
             "f": "file",
             "g": "graph",
+            "i": "index",
         }
 
     def precmd(self, line: str) -> str:
@@ -509,6 +515,90 @@ class FileMapShell(cmd.Cmd):
             border_style="green",
         )
         console.print(panel)
+
+    # ==================== 索引命令 ====================
+
+    def do_index(self, arg: str) -> None:
+        """索引操作: index <子命令> [参数]
+        子命令:
+          <file_id/序号>  - 为指定文件创建索引
+          status          - 查看索引状态
+          search <query>  - 全文搜索
+        """
+        if not arg:
+            # 显示索引状态
+            self._index_status()
+            return
+
+        parts = arg.split(None, 1)
+        subcmd = parts[0]
+        subarg = parts[1] if len(parts) > 1 else ""
+
+        if subcmd == "status":
+            self._index_status()
+        elif subcmd == "search":
+            self._index_search(subarg)
+        else:
+            # 尝试作为文件ID/序号
+            self._index_file(subcmd)
+
+    def _index_file(self, file_arg: str) -> None:
+        """为文件创建索引"""
+        file = self._get_file_by_arg(file_arg)
+        if not file:
+            return
+
+        console.print(f"[cyan]正在索引: {file.name}[/cyan]")
+        if self.indexer.index_file(file):
+            console.print(f"[green]✓ 索引成功[/green]")
+        else:
+            console.print(f"[red]✗ 索引失败（可能是不支持的文件类型）[/red]")
+
+    def _index_status(self) -> None:
+        """显示索引状态"""
+        stats = self.indexer.get_stats()
+
+        panel = Panel(
+            f"索引文档数: {stats['total_docs']}\n"
+            f"索引大小: {self._format_size(stats['index_size'])}\n"
+            f"最后更新: {stats['last_modified'] or '未知'}",
+            title="📑 索引状态",
+            border_style="blue",
+        )
+        console.print(panel)
+
+    def _index_search(self, query: str) -> None:
+        """全文搜索"""
+        if not query:
+            console.print("[yellow]请输入搜索关键词[/yellow]")
+            return
+
+        console.print(f"[cyan]全文搜索: {query}[/cyan]\n")
+        results = self.indexer.search(query, limit=10, highlight=True)
+
+        if not results:
+            console.print("[yellow]没有找到匹配的结果[/yellow]")
+            console.print("[dim]提示: 确保文件已创建索引 (使用 'index <file_id>' 命令)[/dim]")
+            return
+
+        console.print(f"[green]找到 {len(results)} 个结果:[/green]\n")
+
+        # 更新当前文件列表
+        self.current_files = []
+        for idx, result in enumerate(results, 1):
+            file = self.datastore.get_file(result['file_id'])
+            if file:
+                self.current_files.append(file)
+                score_pct = int(result['score'] * 100)
+                console.print(f"[bold]{idx}. [{score_pct}%] {result['filename']}[/bold]")
+
+                # 显示高亮片段
+                if result['highlights']:
+                    for field, hl_text in result['highlights']:
+                        if field == 'content' and hl_text:
+                            console.print(f"   [yellow]...{hl_text}...[/yellow]")
+
+                console.print()
 
     # ==================== 系统命令 ====================
 

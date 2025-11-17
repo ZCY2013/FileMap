@@ -18,6 +18,11 @@ watchdog>=3.0.0
 # Optional: Data Analysis
 pandas>=2.0.0
 
+# Full-text Search
+PyPDF2>=3.0.0
+Whoosh>=2.7.4
+jieba>=0.42.1
+
 # Development Dependencies
 pytest>=7.4.0
 pytest-cov>=4.1.0
